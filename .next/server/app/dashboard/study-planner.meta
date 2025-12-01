@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/dashboard/layout,_N_T_/dashboard/study-planner/layout,_N_T_/dashboard/study-planner/page,_N_T_/dashboard/study-planner"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/dashboard/study-planner/__PAGE__",
+    "/dashboard/study-planner",
+    "/dashboard",
+    "/_index",
+    "/_head"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/dashboard/performance/route": "app/api/dashboard/performance/route.js",
+  "/api/dashboard/stats/route": "app/api/dashboard/stats/route.js",
+  "/api/dashboard/weekly-progress/route": "app/api/dashboard/weekly-progress/route.js",
+  "/api/gamification/stats/route": "app/api/gamification/stats/route.js",
+  "/api/lessons/[id]/route": "app/api/lessons/[id]/route.js",
+  "/api/lessons/route": "app/api/lessons/route.js",
+  "/api/quiz/attempt/route": "app/api/quiz/attempt/route.js",
+  "/api/quiz/subject-performance/route": "app/api/quiz/subject-performance/route.js",
+  "/api/user/profile/route": "app/api/user/profile/route.js",
+  "/dashboard/generate/page": "app/dashboard/generate/page.js",
+  "/dashboard/lessons/page": "app/dashboard/lessons/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/lessons/[id]/page": "app/lessons/[id]/page.js"
+}

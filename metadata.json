@@ -1,0 +1,5 @@
+{
+  "name": "NaijaPrep AI",
+  "description": "AI-powered study platform for Nigerian curriculum (WAEC, NECO, JAMB, BECE). Generates weekly lesson notes, summaries, and quizzes aligned with NERDC standards.",
+  "requestFramePermissions": []
+}

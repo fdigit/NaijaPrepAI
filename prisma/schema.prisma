@@ -1,0 +1,244 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum ClassLevel {
+  JSS1
+  JSS2
+  JSS3
+  SSS1
+  SSS2
+  SSS3
+}
+
+enum Term {
+  FIRST
+  SECOND
+  THIRD
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // Hashed password for credentials auth
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // User Profile
+  classLevel    ClassLevel?
+  preferredSubjects String[]
+  
+  // Gamification
+  xpPoints      Int      @default(0)  // Total XP points
+  level         Int      @default(1)  // User level based on XP
+  badges        String[] @default([])  // Array of badge IDs earned
+  dailyStreak  Int      @default(0)   // Current daily streak
+  lastActivityDate DateTime?          // Last date user was active (for streak tracking)
+  subjectProgress Json   @default("{}") // Progress per subject: { subject: { lessonsCompleted, quizzesPassed, xpEarned } }
+  
+  // Relationships
+  lessons       Lesson[]
+  quizAttempts  QuizAttempt[]
+  studySessions StudySession[]
+  examTimetables ExamTimetable[]
+  studyPlans    StudyPlan[]
+  examPreps     ExamPrep[]
+  examPrepAttempts ExamPrepAttempt[]
+  
+  @@map("users")
+}
+
+model Lesson {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Selection State
+  classLevel ClassLevel
+  subject    String
+  term       Term
+  week       Int
+  topic      String
+
+  // Lesson Content
+  topicTitle      String
+  introduction    String
+  mainContent     String   @db.String
+  summaryPoints   String[]
+  practiceQuestions Json
+  theoryQuestion  Json
+
+  // Ownership
+  userId String? @db.ObjectId
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  quizAttempts  QuizAttempt[]
+  studySessions StudySession[]
+
+  @@index([classLevel, subject, term, week])
+  @@index([userId])
+  @@map("lessons")
+}
+
+model QuizAttempt {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  lessonId  String   @db.ObjectId
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  // Quiz Results
+  totalQuestions    Int
+  correctAnswers    Int
+  score             Float  // Percentage
+  timeSpent         Int?   // Seconds
+  answers           Json   // Store selected answers
+  
+  @@index([userId])
+  @@index([lessonId])
+  @@map("quizAttempts")
+}
+
+model StudySession {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  date      DateTime @default(now())
+  
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  lessonId  String?  @db.ObjectId
+  lesson    Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  duration  Int      // Minutes spent studying
+  
+  @@index([userId, date])
+  @@map("studySessions")
+}
+
+model ExamTimetable {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Exam Information
+  examName  String   // e.g., "WAEC 2024", "BECE 2024"
+  examDate  DateTime // Start date of exams
+  endDate   DateTime? // End date of exams (optional)
+  
+  // Subject Exam Dates
+  subjectExams Json   // Array of { subject: string, date: DateTime, time?: string }
+  
+  isActive  Boolean  @default(true)
+  
+  // Relations
+  studyPlans StudyPlan[]
+  
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("examTimetables")
+}
+
+model StudyPlan {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  examTimetableId String?  @db.ObjectId
+  examTimetable   ExamTimetable? @relation(fields: [examTimetableId], references: [id], onDelete: Cascade)
+  
+  // Plan Information
+  planName  String   // e.g., "Weekly Plan - Week 1"
+  startDate DateTime
+  endDate   DateTime
+  
+  // Study Schedule
+  schedule  Json     // Array of daily study sessions: { date: DateTime, subjects: [{ subject: string, duration: number, topics: string[] }] }
+  
+  // Plan Status
+  isActive  Boolean  @default(true)
+  completed Boolean  @default(false)
+  
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("studyPlans")
+}
+
+model ExamPrep {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Exam Information
+  subject   String   // e.g., "Mathematics", "Physics"
+  classLevel ClassLevel
+  examName  String?  // Optional: "WAEC Prep", "BECE Prep", etc.
+  
+  // Source Lessons (which lessons were used to generate this exam)
+  sourceLessonIds String[] @db.ObjectId // Array of lesson IDs
+  
+  // Generated Questions
+  questions Json     // Array of CBT questions with structure:
+                     // { question: string, options: string[], 
+                     //   correctOptionIndex: number, explanation: string,
+                     //   topicCovered: string, difficulty: 'easy'|'medium'|'hard' }
+  
+  // Metadata
+  totalQuestions Int
+  topicsCovered  String[] // List of topics from source lessons
+  isActive       Boolean  @default(true)
+  
+  // Relations
+  attempts       ExamPrepAttempt[]
+  
+  @@index([userId, subject])
+  @@index([userId, classLevel])
+  @@map("examPreps")
+}
+
+model ExamPrepAttempt {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  examPrepId String   @db.ObjectId
+  examPrep   ExamPrep @relation(fields: [examPrepId], references: [id], onDelete: Cascade)
+  
+  // Exam Results
+  totalQuestions    Int
+  correctAnswers    Int
+  score             Float  // Percentage
+  timeSpent         Int?   // Seconds
+  answers           Json   // Store selected answers: Array<{questionIndex: number, selectedOption: number}>
+  
+  @@index([userId])
+  @@index([examPrepId])
+  @@index([userId, examPrepId])
+  @@map("examPrepAttempts")
+}

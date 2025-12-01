@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/auth/register": {},
+    "/api/dashboard/weekly-progress": {},
+    "/api/exam-prep/[id]/attempt": {},
+    "/api/exam-prep/[id]": {},
+    "/api/auth/[...nextauth]": {},
+    "/api/gamification/stats": {},
+    "/api/lessons/[id]": {},
+    "/api/exam-prep": {},
+    "/api/lessons": {},
+    "/api/quiz/subject-performance": {},
+    "/api/quiz/attempt": {},
+    "/api/study-planner/generate": {},
+    "/api/study-planner/exam-timetable": {},
+    "/api/study-planner/plans": {},
+    "/api/user/profile": {},
+    "/api/dashboard/performance": {},
+    "/api/dashboard/stats": {}
+  }
+}
