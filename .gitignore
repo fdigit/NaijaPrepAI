@@ -33,3 +33,7 @@ dist-ssr
 
 /generated/prisma
 .vercel
+
+# Documentation files - prevent accidental secret exposure
+*.md
+!README.md
