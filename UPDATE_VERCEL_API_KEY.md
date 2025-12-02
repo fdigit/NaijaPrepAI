@@ -22,7 +22,7 @@ If you have your app deployed on Vercel, you **must** update the `GEMINI_API_KEY
 3. **Delete the old key** (the one that was revoked)
 4. Click **Add New** to add a new variable:
    - **Key**: `GEMINI_API_KEY`
-   - **Value**: `AIzaSyByTm-HztGLW7kqQf9llMGJ6UhqZX_C2oQ` (your new key)
+   - **Value**: `your-new-api-key-here` (paste your new API key from Google AI Studio)
    - **Environment**: Select all environments:
      - ✅ Production
      - ✅ Preview
