@@ -1,7 +1,14 @@
 import { prisma } from '../lib/prisma';
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
+// Validate API key on module load
+const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+if (!apiKey) {
+  console.error('⚠️ GEMINI_API_KEY is not set in environment variables');
+  console.error('Please add GEMINI_API_KEY to your .env.local file');
+}
+
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export interface SubjectPerformance {
   subject: string;
@@ -139,6 +146,10 @@ export const generateStudyPlan = async (
   }
 
   // Generate study plan using AI
+  if (!ai) {
+    throw new Error('GEMINI_API_KEY is not configured. Please add it to your .env.local file and restart the server.');
+  }
+
   const modelId = "gemini-2.5-flash";
 
   const prompt = `
@@ -229,9 +240,15 @@ export const generateStudyPlan = async (
       return JSON.parse(response.text) as WeeklyTimetable[];
     }
     throw new Error("No content generated");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Study Plan Generation Error:", error);
-    // Fallback to a simple generated plan
+    
+    // If it's an API key error, don't fallback - throw the error
+    if (error?.message?.includes('API key') || error?.message?.includes('GEMINI_API_KEY')) {
+      throw error;
+    }
+    
+    // For other errors, fallback to a simple generated plan
     return generateFallbackPlan(allSubjects, daysLeft);
   }
 };
@@ -349,4 +366,6 @@ export const getUserStudyPlans = async (userId: string) => {
     },
   });
 };
+
+
 

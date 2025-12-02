@@ -91,8 +91,19 @@ export default function GenerateLessonPage() {
         setError(`Failed to save lesson: ${saveError.message || 'Unknown error'}. Please try again.`);
         setLoading(false);
       }
-    } catch (err) {
-      setError("Failed to generate content. Please check your connection and try again. If the topic is obscure, try being more specific.");
+    } catch (err: any) {
+      // Show more specific error messages
+      let errorMessage = "Failed to generate content. Please check your connection and try again.";
+      
+      if (err?.message?.includes('API key') || err?.message?.includes('GEMINI_API_KEY')) {
+        errorMessage = "API key is missing or invalid. Please check your .env.local file and ensure GEMINI_API_KEY is set correctly.";
+      } else if (err?.message?.includes('quota')) {
+        errorMessage = "API quota exceeded. Please check your Google AI Studio account limits.";
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setLoading(false);
     }
   };

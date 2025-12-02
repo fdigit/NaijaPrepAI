@@ -3,9 +3,20 @@ import { LessonContent, SelectionState, ExamQuestion } from "../types";
 import { AggregatedContent } from "./examPrepService";
 import { ClassLevel } from "@prisma/client";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
+// Validate API key on module load
+const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+if (!apiKey) {
+  console.error('⚠️ GEMINI_API_KEY is not set in environment variables');
+  console.error('Please add GEMINI_API_KEY to your .env.local file');
+}
+
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const generateLessonPlan = async (selection: SelectionState): Promise<LessonContent> => {
+  if (!ai) {
+    throw new Error('GEMINI_API_KEY is not configured. Please add it to your .env.local file and restart the server.');
+  }
+
   const modelId = "gemini-2.5-flash"; // Using Flash for speed and efficiency with large text generation
 
   const prompt = `
@@ -80,8 +91,25 @@ export const generateLessonPlan = async (selection: SelectionState): Promise<Les
       return JSON.parse(response.text) as LessonContent;
     }
     throw new Error("No content generated");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      status: error?.status,
+      statusCode: error?.statusCode,
+      code: error?.code,
+      response: error?.response?.data || error?.response,
+    });
+    
+    // Provide more helpful error messages
+    if (error?.message?.includes('API key') || error?.status === 401 || error?.status === 403 || error?.statusCode === 401 || error?.statusCode === 403) {
+      throw new Error('Invalid or expired API key. The key may have been revoked after the security incident. Please create a new API key at https://aistudio.google.com/app/apikey and update .env.local');
+    } else if (error?.message?.includes('quota') || error?.status === 429 || error?.statusCode === 429) {
+      throw new Error('API quota exceeded. Please check your Google AI Studio account limits.');
+    } else if (error?.message) {
+      throw new Error(`AI service error: ${error.message}`);
+    }
+    
     throw error;
   }
 };
@@ -95,6 +123,10 @@ export const generateExamQuestions = async (
   aggregatedContent: AggregatedContent,
   questionCount: number = 50
 ): Promise<ExamQuestion[]> => {
+  if (!ai) {
+    throw new Error('GEMINI_API_KEY is not configured. Please add it to your .env.local file and restart the server.');
+  }
+
   const modelId = "gemini-2.5-flash";
 
   // Build content summary for prompt
@@ -203,8 +235,18 @@ Format the response as a JSON array of questions.
       return questions;
     }
     throw new Error("No content generated");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error (Exam Questions):", error);
+    
+    // Provide more helpful error messages
+    if (error?.message?.includes('API key') || error?.status === 401 || error?.status === 403) {
+      throw new Error('Invalid or expired API key. Please check your GEMINI_API_KEY in .env.local and ensure it is valid.');
+    } else if (error?.message?.includes('quota') || error?.status === 429) {
+      throw new Error('API quota exceeded. Please check your Google AI Studio account limits.');
+    } else if (error?.message) {
+      throw new Error(`AI service error: ${error.message}`);
+    }
+    
     throw error;
   }
 };

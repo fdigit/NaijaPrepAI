@@ -12,9 +12,13 @@ dist
 dist-ssr
 *.local
 .next
+
+# Environment variables - NEVER commit these!
 .env
+.env.*
 .env.local
 .env*.local
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -28,3 +32,4 @@ dist-ssr
 *.sw?
 
 /generated/prisma
+.vercel
