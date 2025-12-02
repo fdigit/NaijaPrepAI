@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { LessonContent } from '../types';
-import { BookText, ListChecks, BrainCircuit, CheckCircle2, XCircle, ChevronDown, ChevronUp, FileText, FileDown, Loader2, Clock } from 'lucide-react';
+import { BookText, ListChecks, BrainCircuit, CheckCircle2, XCircle, ChevronDown, ChevronUp, FileText, FileDown, Loader2, Clock, ImageIcon } from 'lucide-react';
 import { exportToWord, exportToPDF } from '@/utils/exportUtils';
 
 interface LessonViewProps {
@@ -263,8 +263,35 @@ const LessonView: React.FC<LessonViewProps> = ({ content, metadata, lessonId }) 
 
       <div className="p-6 md:p-8 min-h-[500px]">
         {activeTab === 'notes' && (
-          <div className="prose prose-slate prose-lg max-w-none prose-headings:text-slate-800 prose-p:text-slate-600 prose-a:text-green-600">
-            <ReactMarkdown>{content.mainContent}</ReactMarkdown>
+          <div className="max-w-none">
+            {/* Display generated image if available */}
+            {content.generatedImage && (
+              <div className="mb-8 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
+                <div className="w-full h-auto max-h-[400px] flex items-center justify-center bg-slate-100 overflow-hidden relative group">
+                  <img 
+                    src={content.generatedImage} 
+                    alt={`Illustration for ${content.topicTitle}`} 
+                    className="w-full h-full object-contain" 
+                    onError={(e) => {
+                      // Hide image if it fails to load
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-white text-sm font-medium flex items-center gap-2">
+                      <ImageIcon size={16} />
+                      AI Generated Educational Illustration
+                    </p>
+                  </div>
+                </div>
+                <div className="px-4 py-2 bg-slate-50 text-xs text-slate-500 text-center border-t border-slate-200">
+                  Figure 1: Visual aid for {content.topicTitle}
+                </div>
+              </div>
+            )}
+            <div className="prose prose-slate prose-lg max-w-none prose-headings:text-slate-800 prose-p:text-slate-600 prose-a:text-green-600 prose-img:rounded-xl prose-img:shadow-sm">
+              <ReactMarkdown>{content.mainContent}</ReactMarkdown>
+            </div>
           </div>
         )}
 

@@ -2,12 +2,14 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { LessonContent, SelectionState, ExamQuestion } from "../types";
 import { AggregatedContent } from "./examPrepService";
 import { ClassLevel } from "@prisma/client";
+import { generateLessonImage } from "./imageService";
 
 // Validate API key on module load
-const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+// Match working code: prioritize API_KEY, fallback to GEMINI_API_KEY
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 if (!apiKey) {
-  console.error('⚠️ GEMINI_API_KEY is not set in environment variables');
-  console.error('Please add GEMINI_API_KEY to your .env.local file');
+  console.error('⚠️ API_KEY or GEMINI_API_KEY is not set in environment variables');
+  console.error('Please add API_KEY or GEMINI_API_KEY to your .env.local file');
 }
 
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
@@ -39,58 +41,79 @@ export const generateLessonPlan = async (selection: SelectionState): Promise<Les
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            topicTitle: { type: Type.STRING, description: "The formal title of the lesson" },
-            introduction: { type: Type.STRING, description: "A brief introductory paragraph" },
-            mainContent: { type: Type.STRING, description: "Full lesson notes in Markdown format" },
-            summaryPoints: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "List of key takeaways"
-            },
-            practiceQuestions: {
-              type: Type.ARRAY,
-              items: {
+    // Run text generation and image fetching in parallel for better performance
+    const [textResponseResult, imageResult] = await Promise.allSettled([
+      ai.models.generateContent({
+        model: modelId,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              topicTitle: { type: Type.STRING, description: "The formal title of the lesson" },
+              introduction: { type: Type.STRING, description: "A brief introductory paragraph" },
+              mainContent: { type: Type.STRING, description: "Full lesson notes in Markdown format" },
+              summaryPoints: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "List of key takeaways"
+              },
+              practiceQuestions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    question: { type: Type.STRING },
+                    options: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING },
+                      description: "Array of 4 options"
+                    },
+                    correctOptionIndex: { type: Type.INTEGER, description: "0-3 index of correct option" },
+                    explanation: { type: Type.STRING, description: "Why this answer is correct" }
+                  },
+                  required: ["question", "options", "correctOptionIndex", "explanation"]
+                },
+                description: "5 MCQs"
+              },
+              theoryQuestion: {
                 type: Type.OBJECT,
                 properties: {
                   question: { type: Type.STRING },
-                  options: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                    description: "Array of 4 options"
-                  },
-                  correctOptionIndex: { type: Type.INTEGER, description: "0-3 index of correct option" },
-                  explanation: { type: Type.STRING, description: "Why this answer is correct" }
+                  answer: { type: Type.STRING, description: "Detailed model answer" }
                 },
-                required: ["question", "options", "correctOptionIndex", "explanation"]
-              },
-              description: "5 MCQs"
+                required: ["question", "answer"]
+              }
             },
-            theoryQuestion: {
-              type: Type.OBJECT,
-              properties: {
-                question: { type: Type.STRING },
-                answer: { type: Type.STRING, description: "Detailed model answer" }
-              },
-              required: ["question", "answer"]
-            }
-          },
-          required: ["topicTitle", "introduction", "mainContent", "summaryPoints", "practiceQuestions", "theoryQuestion"]
+            required: ["topicTitle", "introduction", "mainContent", "summaryPoints", "practiceQuestions", "theoryQuestion"]
+          }
         }
-      }
-    });
+      }),
+      generateLessonImage(selection.topic, selection.subject, selection.classLevel)
+    ]);
 
-    if (response.text) {
-      return JSON.parse(response.text) as LessonContent;
+    // Handle text response (required)
+    if (textResponseResult.status === 'rejected') {
+      throw textResponseResult.reason;
     }
-    throw new Error("No content generated");
+
+    const textResponse = textResponseResult.value;
+    let content: LessonContent;
+
+    if (textResponse.text) {
+      content = JSON.parse(textResponse.text) as LessonContent;
+    } else {
+      throw new Error("No content generated");
+    }
+
+    // Handle image response (optional - attach if successful)
+    if (imageResult.status === 'fulfilled' && imageResult.value) {
+      content.generatedImage = imageResult.value;
+    }
+    // If image generation fails, we continue without it (graceful degradation)
+
+    return content;
   } catch (error: any) {
     console.error("Gemini API Error:", error);
     console.error("Error details:", {

@@ -78,6 +78,7 @@ model Lesson {
   summaryPoints   String[]
   practiceQuestions Json
   theoryQuestion  Json
+  generatedImage  String?  // Optional: URL to educational image
 
   // Ownership
   userId String? @db.ObjectId

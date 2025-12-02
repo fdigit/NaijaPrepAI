@@ -40,6 +40,7 @@ export interface LessonContent {
   summaryPoints: string[];
   practiceQuestions: MCQ[];
   theoryQuestion: TheoryQuestion;
+  generatedImage?: string; // Optional: URL to generated/fetched educational image
 }
 
 export type SubjectOption = {
