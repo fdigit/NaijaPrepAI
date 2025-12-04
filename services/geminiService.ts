@@ -33,9 +33,12 @@ export const generateLessonPlan = async (selection: SelectionState): Promise<Les
 
     Requirements:
     1. **Lesson Notes**: Detailed, academic tone, approx 800-1000 words. Use Markdown for formatting (headers, bold, lists). Include definitions, formulas (if applicable), and examples relevant to the Nigerian context.
-    2. **Summary**: 3-5 concise bullet points for revision.
-    3. **Practice Questions**: 5 Multiple Choice Questions (MCQs) with 4 options (A-D) and one correct answer with explanation.
-    4. **Theory Question**: 1 structured theory question with a detailed model answer.
+       **IMPORTANT**: Use LaTeX for ALL mathematical equations, formulas, and symbols.
+       - Wrap inline math in single dollar signs, e.g., $E=mc^2$ or $x^2 + y^2 = r^2$.
+       - Wrap block math in double dollar signs, e.g., $$x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$$.
+    2. **Summary**: 3-5 concise bullet points for revision. Use LaTeX for any mathematical expressions.
+    3. **Practice Questions**: 5 Multiple Choice Questions (MCQs) with 4 options (A-D) and one correct answer with explanation. Use LaTeX for any mathematical expressions in questions, options, and explanations.
+    4. **Theory Question**: 1 structured theory question with a detailed model answer. Use LaTeX for any mathematical expressions.
 
     Format the response as a structured JSON object.
   `;
@@ -53,25 +56,25 @@ export const generateLessonPlan = async (selection: SelectionState): Promise<Les
             properties: {
               topicTitle: { type: Type.STRING, description: "The formal title of the lesson" },
               introduction: { type: Type.STRING, description: "A brief introductory paragraph" },
-              mainContent: { type: Type.STRING, description: "Full lesson notes in Markdown format" },
+              mainContent: { type: Type.STRING, description: "Full lesson notes in Markdown format with LaTeX math" },
               summaryPoints: {
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "List of key takeaways"
+                description: "List of key takeaways (use LaTeX for math)"
               },
               practiceQuestions: {
                 type: Type.ARRAY,
                 items: {
                   type: Type.OBJECT,
                   properties: {
-                    question: { type: Type.STRING },
+                    question: { type: Type.STRING, description: "Question text (use LaTeX for math)" },
                     options: {
                       type: Type.ARRAY,
-                      items: { type: Type.STRING },
+                      items: { type: Type.STRING, description: "Option text (use LaTeX for math)" },
                       description: "Array of 4 options"
                     },
                     correctOptionIndex: { type: Type.INTEGER, description: "0-3 index of correct option" },
-                    explanation: { type: Type.STRING, description: "Why this answer is correct" }
+                    explanation: { type: Type.STRING, description: "Why this answer is correct (use LaTeX for math)" }
                   },
                   required: ["question", "options", "correctOptionIndex", "explanation"]
                 },
@@ -80,8 +83,8 @@ export const generateLessonPlan = async (selection: SelectionState): Promise<Les
               theoryQuestion: {
                 type: Type.OBJECT,
                 properties: {
-                  question: { type: Type.STRING },
-                  answer: { type: Type.STRING, description: "Detailed model answer" }
+                  question: { type: Type.STRING, description: "Theory question text (use LaTeX for math)" },
+                  answer: { type: Type.STRING, description: "Detailed model answer with LaTeX math" }
                 },
                 required: ["question", "answer"]
               }
@@ -186,6 +189,9 @@ Requirements:
    - Include a detailed explanation of why the correct answer is right
    - Reference which topic it covers
    - Be appropriate for ${classLevel} level
+   - Use LaTeX for ALL mathematical equations, formulas, and symbols:
+     * Inline math: $equation$ (single dollar signs)
+     * Block math: $$equation$$ (double dollar signs)
 5. Ensure comprehensive coverage - every major topic should have at least one question
 6. Questions should prepare students for actual WAEC/BECE exams
 7. Avoid duplicate questions or questions too similar to each other
@@ -207,11 +213,11 @@ Format the response as a JSON array of questions.
             properties: {
               question: {
                 type: Type.STRING,
-                description: "The question text"
+                description: "The question text (use LaTeX for math)"
               },
               options: {
                 type: Type.ARRAY,
-                items: { type: Type.STRING },
+                items: { type: Type.STRING, description: "Option text (use LaTeX for math)" },
                 description: "Array of exactly 4 options (A, B, C, D)"
               },
               correctOptionIndex: {
@@ -220,7 +226,7 @@ Format the response as a JSON array of questions.
               },
               explanation: {
                 type: Type.STRING,
-                description: "Detailed explanation of why this answer is correct"
+                description: "Detailed explanation of why this answer is correct (use LaTeX for math)"
               },
               topicCovered: {
                 type: Type.STRING,

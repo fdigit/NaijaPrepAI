@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { LessonContent } from '../types';
 import { BookText, ListChecks, BrainCircuit, CheckCircle2, XCircle, ChevronDown, ChevronUp, FileText, FileDown, Loader2, Clock, ImageIcon } from 'lucide-react';
 import { exportToWord, exportToPDF } from '@/utils/exportUtils';
@@ -290,7 +292,12 @@ const LessonView: React.FC<LessonViewProps> = ({ content, metadata, lessonId }) 
               </div>
             )}
             <div className="prose prose-slate prose-lg max-w-none prose-headings:text-slate-800 prose-p:text-slate-600 prose-a:text-green-600 prose-img:rounded-xl prose-img:shadow-sm">
-              <ReactMarkdown>{content.mainContent}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+              >
+                {content.mainContent}
+              </ReactMarkdown>
             </div>
           </div>
         )}
@@ -304,7 +311,14 @@ const LessonView: React.FC<LessonViewProps> = ({ content, metadata, lessonId }) 
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-yellow-200 text-yellow-700 flex items-center justify-center font-bold text-sm">
                     {idx + 1}
                   </span>
-                  <span>{point}</span>
+                  <div className="prose prose-sm prose-slate max-w-none">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {point}
+                    </ReactMarkdown>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -364,7 +378,16 @@ const LessonView: React.FC<LessonViewProps> = ({ content, metadata, lessonId }) 
                 
                 return (
                   <div key={qIdx} className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                    <p className="font-medium text-slate-900 mb-4">{qIdx + 1}. {q.question}</p>
+                    <div className="font-medium text-slate-900 mb-4 prose prose-p:my-0">
+                      <span className="font-bold mr-1">{qIdx + 1}.</span>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                        components={{ p: React.Fragment }}
+                      >
+                        {q.question}
+                      </ReactMarkdown>
+                    </div>
                     <div className="space-y-3">
                       {q.options.map((opt, optIdx) => {
                         let btnClass = "w-full text-left p-3 rounded-lg border text-sm transition-all ";
@@ -389,9 +412,20 @@ const LessonView: React.FC<LessonViewProps> = ({ content, metadata, lessonId }) 
                             className={btnClass}
                           >
                             <div className="flex items-center justify-between">
-                              <span><span className="font-semibold mr-2">{String.fromCharCode(65 + optIdx)}.</span> {opt}</span>
-                              {isAnswered && optIdx === q.correctOptionIndex && <CheckCircle2 size={16} className="text-green-600" />}
-                              {isAnswered && selectedAnswers[qIdx] === optIdx && optIdx !== q.correctOptionIndex && <XCircle size={16} className="text-red-500" />}
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold min-w-[1.5rem]">{String.fromCharCode(65 + optIdx)}.</span>
+                                <span className="prose prose-sm prose-p:my-0">
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                    components={{ p: React.Fragment }}
+                                  >
+                                    {opt}
+                                  </ReactMarkdown>
+                                </span>
+                              </div>
+                              {isAnswered && optIdx === q.correctOptionIndex && <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />}
+                              {isAnswered && selectedAnswers[qIdx] === optIdx && optIdx !== q.correctOptionIndex && <XCircle size={16} className="text-red-500 flex-shrink-0" />}
                             </div>
                           </button>
                         );
@@ -399,7 +433,15 @@ const LessonView: React.FC<LessonViewProps> = ({ content, metadata, lessonId }) 
                     </div>
                     {isAnswered && (
                       <div className={`mt-4 p-3 rounded-lg text-sm ${isCorrect ? 'bg-green-50 text-green-800' : 'bg-slate-100 text-slate-700'}`}>
-                        <span className="font-bold">Explanation:</span> {q.explanation}
+                        <span className="font-bold block mb-1">Explanation:</span>
+                        <div className="prose prose-sm prose-p:my-0">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                          >
+                            {q.explanation}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -412,7 +454,14 @@ const LessonView: React.FC<LessonViewProps> = ({ content, metadata, lessonId }) 
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Theory Question</h3>
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                 <div className="p-6 bg-slate-50 border-b border-slate-200">
-                  <p className="font-medium text-slate-900">{content.theoryQuestion.question}</p>
+                  <div className="font-medium text-slate-900 prose prose-p:my-0">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {content.theoryQuestion.question}
+                    </ReactMarkdown>
+                  </div>
                 </div>
                 <div className="p-4">
                   <button 
@@ -423,8 +472,13 @@ const LessonView: React.FC<LessonViewProps> = ({ content, metadata, lessonId }) 
                     {showTheoryAnswer ? 'Hide Model Answer' : 'Show Model Answer'}
                   </button>
                   {showTheoryAnswer && (
-                    <div className="mt-4 prose prose-sm prose-slate bg-green-50/50 p-4 rounded-lg border border-green-100">
-                      <ReactMarkdown>{content.theoryQuestion.answer}</ReactMarkdown>
+                    <div className="mt-4 prose prose-sm prose-slate bg-green-50/50 p-4 rounded-lg border border-green-100 max-w-none">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {content.theoryQuestion.answer}
+                      </ReactMarkdown>
                     </div>
                   )}
                 </div>
